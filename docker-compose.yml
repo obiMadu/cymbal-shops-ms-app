@@ -1,0 +1,104 @@
+version: "3"
+
+services:
+  adservice:
+    build:
+      context: ./src/adservice/
+    expose:
+      - "9555"
+    env_file:
+      - ./svc_addresses.env
+
+  cartservice:
+    build:
+      context: ./src/cartservice/src/
+    expose:
+      - "7070"
+    env_file:
+      - ./svc_addresses.env
+
+  checkoutservice:
+    build:
+      context: ./src/checkoutservice
+    expose:
+      - "5050"
+    env_file:
+      - ./svc_addresses.env
+
+  currencyservice:
+    build:
+      context: ./src/currencyservice
+    expose:
+      - "7000"
+    env_file:
+      - ./svc_addresses.env
+    environment:
+      - PORT=7000
+      - DISABLE_PROFILER=true
+
+  emailservice:
+    build:
+      context: ./src/emailservice
+    expose:
+      - "8080"
+
+  frontend:
+    build:
+      context: ./src/frontend
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./svc_addresses.env
+
+  loadgenerator:
+    build:
+      context: ./src/loadgenerator
+    expose:
+      - "80"
+    env_file:
+      - ./svc_addresses.env
+
+  paymentservice:
+    build:
+      context: ./src/paymentservice
+    expose:
+      - "50051"
+    env_file:
+      - ./svc_addresses.env
+    environment:
+      - PORT=50051
+      - DISABLE_PROFILER=true
+
+  productcatalogservice:
+    build:
+      context: ./src/productcatalogservice
+    expose:
+      - "3550"
+    env_file:
+      - ./svc_addresses.env
+
+  recommendationservice:
+    build:
+      context: ./src/recommendationservice
+    expose:
+      - "8080"
+    env_file:
+      - ./svc_addresses.env
+
+  shippingservice:
+    build:
+      context: ./src/shippingservice
+    expose:
+      - "50051"
+    env_file:
+      - ./svc_addresses.env
+
+  #  shoppingassistantsevice:
+  #    build:
+  #      context: ./src/shoppingassistantservice
+  #    expose:
+  #      - "8080"
+  #    env_file:
+  #      - ./svc_addresses.env
