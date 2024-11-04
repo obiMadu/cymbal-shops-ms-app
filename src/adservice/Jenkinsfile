@@ -1,0 +1,46 @@
+pipeline {
+    agent {
+        label "ubuntu"
+      }
+
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build and Tag Docker Image') {
+            steps {
+                dir('src/adservice') {
+                    script {
+                        def dockerImage = docker.build("obimadu/adservice:latest")
+                    }
+                }
+            }
+        }
+
+        stage('Scan Image with Trivy') {
+            steps {
+                script {
+                    sh "trivy image obimadu/adservice:latest"
+                }
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        dockerImage.push("latest")
+                    }
+                }
+            }
+        }
+    }
+}
+
