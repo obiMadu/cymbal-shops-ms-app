@@ -23,6 +23,7 @@ pipeline {
                 dir('src/adservice') {
                     withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                         script {
+                          sh "chmod +x gradlew"
                           sh "./gradlew sonar"
                         }
                     }
