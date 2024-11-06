@@ -9,6 +9,7 @@ pipeline {
         DOCKER_IMAGE_TAG = "latest"
         DOCKER_HUB_USERNAME = "obimadu"
         DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        SONARQUBE_PROJECT_ID = "cymbal-adservice"
     }
 
     stages {
@@ -25,7 +26,7 @@ pipeline {
                         script {
                           sh "chmod +x gradlew"
                           sh "./gradlew clean"
-                          sh "./gradlew sonar"
+                          sh "./gradlew sonar -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
                         }
                     }
                 }
