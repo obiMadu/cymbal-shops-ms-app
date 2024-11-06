@@ -4,7 +4,7 @@ pipeline {
       }
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
     }
 
     stages {
@@ -27,7 +27,7 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                    docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
                         dockerImage.push("latest")
                     }
                 }
