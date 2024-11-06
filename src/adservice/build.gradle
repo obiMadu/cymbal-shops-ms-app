@@ -11,7 +11,6 @@ sonar {
     property "sonar.projectKey", "cymbal-shops"
     property 'sonar.sources', 'src/main/java'
     property 'sonar.exclusions', 'build/generated/source/proto/**'
-    property 'sonar.tests', 'src/test/java'
     property 'sonar.test.inclusions', 'build/generated/source/proto/**'
   }
 }
