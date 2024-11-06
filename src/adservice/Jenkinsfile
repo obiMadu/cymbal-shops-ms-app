@@ -7,7 +7,8 @@ pipeline {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
         DOCKER_IMAGE_NAME = "adservice"
         DOCKER_IMAGE_TAG = "latest"
-        DOCKER_IMAGE = "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        DOCKER_HUB_USERNAME = "obimadu"
+        DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
     }
 
     stages {
@@ -21,7 +22,7 @@ pipeline {
             steps {
                 dir('src/adservice') {
                     script {
-                        dockerImage = docker.build("${DOCKER_HUB_CREDENTIALS_USR}/${DOCKER_IMAGE}")
+                        dockerImage = docker.build("${DOCKER_IMAGE}")
                     }
                 }
             }
@@ -34,7 +35,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_HUB_CREDENTIALS_USR}/${DOCKER_IMAGE}"
+                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
                 }
             }
         }
