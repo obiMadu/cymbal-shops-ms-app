@@ -30,7 +30,7 @@ pipeline {
         stage('Scan with Trivy') {
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}
+                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
                 }
             }
         }
