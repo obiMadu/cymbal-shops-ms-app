@@ -20,7 +20,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv(credentialsId: 'sonarqube-token-90') {
+                withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                     script {
                       sh "./gradlew sonar"
                     }
