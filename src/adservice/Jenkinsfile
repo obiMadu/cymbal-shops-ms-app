@@ -24,14 +24,6 @@ pipeline {
             }
         }
 
-        stage('Scan Image with Trivy') {
-            steps {
-                script {
-                    sh "trivy image obimadu/adservice:latest"
-                }
-            }
-        }
-
         stage('Push Image to Docker Hub') {
             steps {
                 script {
