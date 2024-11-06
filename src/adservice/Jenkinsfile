@@ -18,7 +18,7 @@ pipeline {
             steps {
                 dir('src/adservice') {
                     script {
-                        docker.build("${DOCKER_HUB_CREDENTIALS_USR}/adservice:latest")
+                        dockerImage = docker.build("obimadu/adservice:latest")
                     }
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
-                        docker.image("${DOCKER_HUB_CREDENTIALS_USR}/adservice:latest").push()
+                        dockerImage.push()
                     }
                 }
             }
