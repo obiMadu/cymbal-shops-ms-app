@@ -34,7 +34,7 @@ pipeline {
 
         stage('Build and Tag Docker Image') {
             steps {
-                dir('src/cartservice') {
+                dir('src/cartservice/src') {
                     script {
                         dockerImage = docker.build("${DOCKER_IMAGE}")
                     }
