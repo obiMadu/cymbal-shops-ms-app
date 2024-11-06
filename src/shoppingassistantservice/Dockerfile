@@ -17,9 +17,9 @@ FROM python:3.12.4-slim@sha256:f11725aba18c19664a408902103365eaf8013823ffc56270f
 FROM base as builder
 
 RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends \
-        wget g++ \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends \
+  wget g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 # get packages
 COPY requirements.txt .

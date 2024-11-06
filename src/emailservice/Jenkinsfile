@@ -1,0 +1,68 @@
+pipeline {
+    agent {
+        label "ubuntu"
+      }
+
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
+        DOCKER_IMAGE_NAME = "emailservice"
+        DOCKER_IMAGE_TAG = "latest"
+        DOCKER_HUB_USERNAME = "obimadu"
+        DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        SONARQUBE_PROJECT_ID = "cymbal-emailservice"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('src/cartservice') {
+                    withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
+                        script {
+                          def scannerHome = tool 'SonarQubeScanner';
+                          sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build and Tag Docker Image') {
+            steps {
+                dir('src/cartservice/src') {
+                    script {
+                        dockerImage = docker.build("${DOCKER_IMAGE}")
+                    }
+                }
+            }
+        }
+
+        stage('Scan with Trivy') {
+            environment{
+                TRIVY_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-db"
+                TRIVY_JAVA_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-java-db"
+            }
+            steps {
+                script {
+                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+                }
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+    }
+}
+
