@@ -23,7 +23,7 @@ pipeline {
                 dir('src/cartservice') {
                     withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                         script {
-                          def scannerHome = tool 'SonarQube';
+                          def scannerHome = tool 'SonarQubeScanner';
                           sh "${scannerHome}/bin/sonar-scanner"
                         }
                     }
