@@ -7,7 +7,7 @@ pipeline {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
         DOCKER_IMAGE_NAME = "adservice"
         DOCKER_IMAGE_TAG = "latest"
-        DOCKER_IMAGE = "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        DOCKER_IMAGE = "${DOCKER_HUB_CREDENTIALS_USR}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
     }
 
     stages {
@@ -28,6 +28,10 @@ pipeline {
         }
 
         stage('Scan with Trivy') {
+            environment{
+                TRIVY_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-db"
+                TRIVY_JAVA_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-java-db"
+            }
             steps {
                 script {
                     sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
