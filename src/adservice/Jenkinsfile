@@ -25,6 +25,8 @@ pipeline {
                         script {
                           sh "chmod +x gradlew"
                           sh "./gradlew clean"
+                          sh "./gradlew googleJavaFormat" || true
+                          sh "./gradlew verifyGoogleJavaFormat" || true
                           sh "./gradlew build -x test"
                           sh "./gradlew sonar"
                         }
