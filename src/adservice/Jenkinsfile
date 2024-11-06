@@ -18,6 +18,12 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            withSonarQubeEnv(credentialsId: 'sonarqube-token-90') {
+              sh "./gradlew sonar"
+            }
+        }
+
         stage('Build and Tag Docker Image') {
             steps {
                 dir('src/adservice') {
