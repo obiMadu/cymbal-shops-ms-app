@@ -6,7 +6,6 @@ pipeline {
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
         DOCKER_IMAGE_NAME = "cartservice"
-        CODE_DIR = "src/cartservice"
         DOCKER_IMAGE_TAG = "latest"
         DOCKER_HUB_USERNAME = "obimadu"
         DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
@@ -22,11 +21,11 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('${CODE_DIR}') {
+                dir('src/cartservice') {
                     withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                         script {
                           def scannerHome = tool 'SonarQubeScanner';
-                          sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
+                          sh "${scannerHome}/bin/sonar-scanner -Dsonar.sources=. -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
                         }
                     }
                 }
@@ -35,7 +34,7 @@ pipeline {
 
         stage('Build and Tag Docker Image') {
             steps {
-                dir('${CODE_DIR}/src') {
+                dir('src/cartservice/src') {
                     script {
                         dockerImage = docker.build("${DOCKER_IMAGE}")
                     }
