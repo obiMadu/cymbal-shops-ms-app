@@ -5,11 +5,12 @@ pipeline {
 
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
-        DOCKER_IMAGE_NAME = "frontendservice"
+        DOCKER_IMAGE_NAME = "frontend"
+        CODE_DIR = "src/frontend"
         DOCKER_IMAGE_TAG = "latest"
         DOCKER_HUB_USERNAME = "obimadu"
         DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
-        SONARQUBE_PROJECT_ID = "cymbal-frontendservice"
+        SONARQUBE_PROJECT_ID = "cymbal-frontend"
     }
 
     stages {
@@ -21,7 +22,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('src/cartservice') {
+                dir('${CODE_DIR}') {
                     withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                         script {
                           def scannerHome = tool 'SonarQubeScanner';
@@ -34,7 +35,7 @@ pipeline {
 
         stage('Build and Tag Docker Image') {
             steps {
-                dir('src/cartservice/src') {
+                dir('${CODE_DIR}') {
                     script {
                         dockerImage = docker.build("${DOCKER_IMAGE}")
                     }
