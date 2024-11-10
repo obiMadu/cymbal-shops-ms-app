@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  AD_SERVICE_ADDR: adservice:9555
+  CART_SERVICE_ADDR: cartservice:7070
+  CHECKOUT_SERVICE_ADDR: checkoutservice:5050
+  CURRENCY_SERVICE_ADDR: currencyservice:7000
+  EMAIL_SERVICE_ADDR: emailservice:8080
+  FRONTEND_ADDR: frontend:8080
+  PAYMENT_SERVICE_ADDR: paymentservice:50051
+  PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
+  RECOMMENDATION_SERVICE_ADDR: recommendationservice:8080
+  SHIPPING_SERVICE_ADDR: shippingservice:50051
+  SHOPPING_ASSISTANT_SERVICE_ADDR: shoppingassistantservice:8080
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: adservice-svc-addresses-env
+  name: svc-addresses-env
