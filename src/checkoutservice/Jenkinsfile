@@ -1,20 +1,24 @@
 def isSubfolderChanged() {
-    return currentBuild.changeSets.any { changeSet ->
-        changeSet.items.any { item ->
-            item.path.startsWith('src/checkoutservice')
+    def changedFiles = []
+    def changeLogSets = currentBuild.changeSets
+    for (int i = 0; i < changeLogSets.size(); i++) {
+        def entries = changeLogSets[i].items
+        for (int j = 0; j < entries.length; j++) {
+            def entry = entries[j]
+            changedFiles.addAll(entry.affectedFiles.collect { it.path })
         }
     }
-}
-
-if (!isSubfolderChanged()) {
-    println('No changes detected in the specified subfolder. Skipping pipeline execution.')
-    return
+    return changedFiles.any { it.startsWith('src/checkoutservice/') }
 }
 
 pipeline {
     agent {
-        label "ubuntu"
-      }
+        label 'ubuntu'
+    }
+
+    triggers {
+        gitea push()
+    }
 
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
@@ -32,13 +36,28 @@ pipeline {
             }
         }
 
+        stage('Check for Changes') {
+            steps {
+                script {
+                    if (!isSubfolderChanged()) {
+                        println('No changes detected in the specified subfolder. Skipping pipeline execution.')
+                        currentBuild.result = 'NOT_BUILT'
+                        return
+                    }
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
+            when {
+                expression { isSubfolderChanged() }
+            }
             steps {
                 dir('src/checkoutservice') {
                     withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
                         script {
-                          def scannerHome = tool 'SonarQubeScanner';
-                          sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
+                            def scannerHome = tool 'SonarQubeScanner'
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
                         }
                     }
                 }
@@ -46,6 +65,9 @@ pipeline {
         }
 
         stage('Build and Tag Docker Image') {
+            when {
+                expression { isSubfolderChanged() }
+            }
             steps {
                 dir('src/checkoutservice') {
                     script {
@@ -56,7 +78,10 @@ pipeline {
         }
 
         stage('Scan with Trivy') {
-            environment{
+            when {
+                expression { isSubfolderChanged() }
+            }
+            environment {
                 TRIVY_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-db"
                 TRIVY_JAVA_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-java-db"
             }
@@ -68,6 +93,9 @@ pipeline {
         }
 
         stage('Push Image to Docker Hub') {
+            when {
+                expression { isSubfolderChanged() }
+            }
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
@@ -78,4 +106,3 @@ pipeline {
         }
     }
 }
-
