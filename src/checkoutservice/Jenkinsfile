@@ -8,7 +8,7 @@ pipeline {
         JFROG_CR_USERNAME = 'cymbal-shops'
         JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${SERVICE_NAME}"
         SONARQUBE_PROJECT_ID = 'cymbal-checkoutservice'
-        MANIFESTS_REPO_URL = 'http://gitea:3000'
+        MANIFESTS_REPO_URL = 'https://gitea.obi.ninja'
         MANIFESTS_REPO_NAME = 'cymbal-shops-ms-app'
         MANIFESTS_REPO_BRANCH = '*/main'
         MANIFESTS_REPO_USER_EMAIL = 'jenkins-ci@gitea.obi.ninja'
