@@ -140,7 +140,7 @@ pipeline {
                             def apiUrl = "https://${MANIFESTS_REPO_URL}/api/v1/repos/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}/pulls"
                             def requestBody = """
                                 {
-                                    "title": "Update image to v${currentBuild.number}",
+                                    "title": "Update ${SERVICE_NAME} image to v${currentBuild.number}",
                                     "body": "Automatically updated the image name using Jenkins pipeline",
                                     "head": "${branchName}",
                                     "base": "main"
