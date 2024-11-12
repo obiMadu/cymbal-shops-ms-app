@@ -58,7 +58,7 @@ pipeline {
             }
         }
 
-        stage('Push Image to Jfrog Container Registry') {
+        stage('Push Image to Jfrog CR') {
             steps {
                 script {
                     docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
