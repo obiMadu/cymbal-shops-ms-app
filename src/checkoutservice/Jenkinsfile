@@ -131,7 +131,7 @@ pipeline {
                             sh "git add ${file}"
                             
                             // Commit the changes with a message
-                            sh 'git commit -m "feat($SERVICE_NAME): Update image to v${currentBuild.number}"'
+                            sh "git commit -m 'feat($SERVICE_NAME): Update image to v${currentBuild.number}'"
                             
                             // Push the new branch to the remote repository
                             sh "git push https://${REPO_USERNAME}:${REPO_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
