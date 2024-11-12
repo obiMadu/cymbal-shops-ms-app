@@ -41,10 +41,7 @@ pipeline {
                 dir('src/checkoutservice') {
                     script {
                         // Built and Tag Image with Current Build No.
-                        dockerImage = docker.build("${JFROG_CR_IMAGE}:${currentBuild.number}")
-
-                        // Tag Image Latest
-                        sh 'docker tag ${JFROG_CR_IMAGE}:${currentBuild.number} ${JFROG_CR_IMAGE}:latest'
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}:v${currentBuild.number}")
                     }
                 }
             }
@@ -57,7 +54,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:${currentBuild.number}"
+                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:v${currentBuild.number}"
                 }
             }
         }
@@ -66,8 +63,8 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
-                        docker.image("${JFROG_CR_IMAGE}:${currentBuild.number}").push()
-                        docker.image("${JFROG_CR_IMAGE}:latest").push()
+                        docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push()
+                        docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push("latest")
                     }
                 }
             }
