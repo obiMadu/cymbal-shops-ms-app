@@ -11,12 +11,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout SCM') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 dir('src/checkoutservice') {
@@ -36,7 +30,7 @@ pipeline {
             }
         }
 
-        stage('Build and Tag Container Image') {
+        stage('Build and Tag Image') {
             steps {
                 dir('src/checkoutservice') {
                     script {
