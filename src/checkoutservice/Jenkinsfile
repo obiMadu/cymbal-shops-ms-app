@@ -1,3 +1,16 @@
+def isSubfolderChanged() {
+    return currentBuild.changeSets.any { changeSet ->
+        changeSet.items.any { item ->
+            item.path.startsWith('src/checkoutservice/')
+        }
+    }
+}
+
+if (!isSubfolderChanged()) {
+    println('No changes detected in the specified subfolder. Skipping pipeline execution.')
+    return
+}
+
 pipeline {
     agent {
         label "ubuntu"
