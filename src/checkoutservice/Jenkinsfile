@@ -41,7 +41,7 @@ pipeline {
                 script {
                     if (!isSubfolderChanged()) {
                         println('No changes detected in the specified subfolder. Skipping pipeline execution.')
-                        currentBuild.result = 'NOT_BUILT'
+                        currentBuild.result = 'SUCCESS'
                         return
                     }
                 }
