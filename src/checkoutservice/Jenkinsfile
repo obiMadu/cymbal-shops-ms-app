@@ -30,6 +30,12 @@ pipeline {
             }
         }
 
+        stage("Code Quality gate") {
+            steps {
+                waitForQualityGate abortPipeline: true
+            }
+        }
+
         stage('Build and Tag Container Image') {
             steps {
                 dir('src/checkoutservice') {
