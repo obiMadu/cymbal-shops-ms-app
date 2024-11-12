@@ -19,10 +19,10 @@ pipeline {
     environment {
         DOCKER_IMAGE_NAME = "checkoutservice"
         DOCKER_IMAGE_TAG = "latest"
-        JFROG_CR_URL = "artifactory.obi.ninja"
-        JFROG_CR_USERNAME = "cymbal-shops"
         DOCKER_HUB_USERNAME = "obimadu"
         DOCKER_HUB_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}"
+        JFROG_CR_URL = "artifactory.obi.ninja"
+        JFROG_CR_USERNAME = "cymbal-shops"
         JFROG_CR_IMAGE = "${JFROG_CR_URL}/${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}"
         SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
     }
@@ -69,7 +69,10 @@ pipeline {
             steps {
                 dir('src/checkoutservice') {
                     script {
-                        dockerImage = docker.build("${JFROG_CR_IMAGE}:${DOCKER_IMAGE_TAG}")
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}")
+
+                        // Tag for JFROG CR
+                        dockerImage.tag("${JFROG_CR_IMAGE}:${DOCKER_IMAGE_TAG}")
 
                         // Tag for Docker Hub
                         dockerImage.tag("${DOCKER_HUB_IMAGE}:${DOCKER_IMAGE_TAG}")
