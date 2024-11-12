@@ -4,9 +4,9 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE_NAME = "checkoutservice"
+        CONTAINER_IMAGE_NAME = "checkoutservice"
         JFROG_CR_USERNAME = "cymbal-shops"
-        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}"
+        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${CONTAINER_IMAGE_NAME}"
         SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
     }
 
