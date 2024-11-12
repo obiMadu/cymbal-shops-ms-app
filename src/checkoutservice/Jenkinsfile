@@ -65,13 +65,15 @@ pipeline {
 
         stage("Image Quality Gate") {
             steps {
-                if (trivyOutput == 0) {
+                script {
+                    if (trivyOutput == 0) {
                         echo "Trivy scan passed. No HIGH or CRITICAL vulnerabilities found."
                     } else {
                         echo "Trivy scan failed. HIGH or CRITICAL vulnerabilities found."
                         echo "Gate Skipped. Be sure to Enforce in a real Project."
                         // currentBuild.result = 'UNSTABLE'
                     }
+                }  
             }
         }
 
