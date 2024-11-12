@@ -1,7 +1,7 @@
 def isSubfolderChanged() {
     return currentBuild.changeSets.any { changeSet ->
         changeSet.items.any { item ->
-            item.path.startsWith('src/checkoutservice/')
+            item.path.startsWith('src/checkoutservice')
         }
     }
 }
