@@ -17,7 +17,6 @@ pipeline {
     }
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
         DOCKER_IMAGE_NAME = "checkoutservice"
         DOCKER_IMAGE_TAG = "latest"
         JFROG_CR_USERNAME = "cymbal-shops"
