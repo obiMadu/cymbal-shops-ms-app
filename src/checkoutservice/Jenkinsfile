@@ -148,7 +148,7 @@ pipeline {
                                     "base": "main"
                                 }
                             """
-                            sh "curl -X POST -H 'Content-Type: application/json' -d '${requestBody}' -u ${GITEA_USERNAME}:${GITEA_PASSWORD} ${apiUrl}"
+                            sh "curl -X POST -H 'Content-Type: application/json' -d '${requestBody}' -u ${REPO_USERNAME}:${REPO_PASSWORD} ${apiUrl}"
                         }
                 }
             }
