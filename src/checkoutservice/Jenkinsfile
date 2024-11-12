@@ -54,8 +54,24 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:v${currentBuild.number}"
+                    // Run Trivy scan on the Docker image
+                    trivyOutput = sh(
+                        script: 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:v${currentBuild.number}',
+                        returnStatus: true
+                    )
                 }
+            }
+        }
+
+        stage("Image Quality Gate") {
+            steps {
+                if (trivyOutput == 0) {
+                        echo "Trivy scan passed. No HIGH or CRITICAL vulnerabilities found."
+                    } else {
+                        echo "Trivy scan failed. HIGH or CRITICAL vulnerabilities found."
+                        echo "Gate Skipped. Be sure to Enforce in a real Project."
+                        // currentBuild.result = 'UNSTABLE'
+                    }
             }
         }
 
