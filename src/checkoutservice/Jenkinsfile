@@ -8,8 +8,8 @@ pipeline {
         JFROG_CR_USERNAME = 'cymbal-shops'
         JFROG_CR_IMAGE = '${JFROG_CR_USERNAME}/${SERVICE_NAME}'
         SONARQUBE_PROJECT_ID = 'cymbal-checkoutservice'
-        MANIFESTS_GIT_SERVER = ''
         MANIFESTS_REPO_URL = ''
+        MANIFESTS_REPO_NAME = ''
         MANIFESTS_REPO_BRANCH = '*/main'
         MANIFESTS_REPO_USER_EMAIL = 'jenkins-ci@gitea.obi.ninja'
         DEPLOYMENT_DIR = 'manifests/'
@@ -100,32 +100,34 @@ pipeline {
         stage('Update Manifest and Create Pull Request') {
             steps {
                 script {
-                    // Checkout the specified Git repository
-                    checkout([$class: 'GitSCM',
-                            branches: [[name: '${MANIFESTS_REPO_BRANCH}']],
-                            userRemoteConfigs: [[url: '${MANIFESTS_REPO_URL}']]])
-                    
-                    // Specify the directory, file, and new image name
-                    def directory = '${DEPLOYMENT_DIR}'
-                    def file = '${DEPLOYMENT_FILENAME}'
-                    def imageName = '${JFROG_CR_IMAGE}:v${currentBuild.number}'
-                    
-                    // Generate a unique branch name
-                    def branchName = "update-image-to-v${currentBuild.number}"
-                    
-                    // Use the dir step to change the current directory
-                    dir(directory) {
-                        // Create a new branch
-                        sh "git checkout -b ${branchName}"
+                    // Use the withCredentials step to provide the Git credentials
+                    withCredentials([usernamePassword(credentialsId: 'gitea-jenkinsci-creds', usernameVariable: 'REPO_USERNAME', passwordVariable: 'REPO_PASSWORD')]) {
+
+                        // Checkout the specified Git repository
+                        checkout([$class: 'GitSCM',
+                                branches: [[name: '${MANIFESTS_REPO_BRANCH}']],
+                                userRemoteConfigs: [[url: '${MANIFESTS_REPO_URL}/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}']]])
                         
-                        // Run the sed command to update the image name
-                        sh "sed -i 's/image: .*/image: ${imageName}/' ${file}"
+                        // Specify the directory, file, and new image name
+                        def directory = '${DEPLOYMENT_DIR}'
+                        def file = '${DEPLOYMENT_FILENAME}'
+                        def imageName = '${JFROG_CR_IMAGE}:v${currentBuild.number}'
                         
-                        // Use the withCredentials step to provide the Git credentials
-                        withCredentials([usernamePassword(credentialsId: 'gitea-jenkinsci-creds', usernameVariable: 'GITEA_USERNAME', passwordVariable: 'GITEA_PASSWORD')]) {
+                        // Generate a unique branch name
+                        def branchName = "update-image-to-v${currentBuild.number}"
+                        
+                        // Use the dir step to change the current directory
+                        dir(directory) {
+                            // Create a new branch
+                            sh "git checkout -b ${branchName}"
+                            
+                            // Run the sed command to update the image name
+                            sh "sed -i 's/image: .*/image: ${imageName}/' ${file}"
+                            
+                            
                             // Set the Git user email and name
                             sh 'git config --global user.email "${MANIFESTS_REPO_USER_EMAIL}"'
-                            sh 'git config --global user.name "${GITEA_USERNAME}"'
+                            sh 'git config --global user.name "${REPO_USERNAME}"'
                             
                             // Add the modified file to the Git staging area
                             sh 'git add ${file}'
@@ -134,13 +136,13 @@ pipeline {
                             sh 'git commit -m "feat($SERVICE_NAME): Update image to v${currentBuild.number}"'
                             
                             // Push the new branch to the remote repository
-                            sh "git push https://${GITEA_USERNAME}:${GITEA_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
+                            sh "git push https://${REPO_USERNAME}:${REPO_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
                             
                             // Create a pull request using the Gitea API
-                            def apiUrl = "https://gitea.your-domain.com/api/v1/repos/your-username/your-repository/pulls"
+                            def apiUrl = "${MANIFESTS_REPO_URL}/api/v1/repos/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}/pulls"
                             def requestBody = """
                                 {
-                                    "title": "Update image name",
+                                    "title": "Update image to v${currentBuild.number}",
                                     "body": "Automatically updated the image name using Jenkins pipeline",
                                     "head": "${branchName}",
                                     "base": "main"
@@ -148,11 +150,10 @@ pipeline {
                             """
                             sh "curl -X POST -H 'Content-Type: application/json' -d '${requestBody}' -u ${GITEA_USERNAME}:${GITEA_PASSWORD} ${apiUrl}"
                         }
-                    }
                 }
+            }
+        }
     }
-}
-
 
     }
 
