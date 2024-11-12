@@ -92,6 +92,19 @@ pipeline {
             }
         }
 
+        stage('Push Image to Jfrog Container Registry') {
+            when {
+                expression { isSubfolderChanged() }
+            }
+            steps {
+                script {
+                    docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+
         stage('Push Image to Docker Hub') {
             when {
                 expression { isSubfolderChanged() }
