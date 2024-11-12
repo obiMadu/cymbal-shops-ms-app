@@ -19,10 +19,11 @@ pipeline {
     environment {
         DOCKER_IMAGE_NAME = "checkoutservice"
         DOCKER_IMAGE_TAG = "latest"
+        JFROG_CR_URL = "artifactory.obi.ninja"
         JFROG_CR_USERNAME = "cymbal-shops"
         DOCKER_HUB_USERNAME = "obimadu"
-        DOCKER_HUB_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
-        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        DOCKER_HUB_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}"
+        JFROG_CR_IMAGE = "${JFROG_CR_URL}/${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}"
         SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
     }
 
@@ -68,10 +69,10 @@ pipeline {
             steps {
                 dir('src/checkoutservice') {
                     script {
-                        dockerImage = docker.build("${JFROG_CR_IMAGE}")
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}:${DOCKER_IMAGE_TAG}")
 
                         // Tag for Docker Hub
-                        dockerImage.tag("${DOCKER_HUB_IMAGE}")
+                        dockerImage.tag("${DOCKER_HUB_IMAGE}:${DOCKER_IMAGE_TAG}")
                     }
                 }
             }
@@ -87,7 +88,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}"
+                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:${DOCKER_IMAGE_TAG}"
                 }
             }
         }
@@ -98,7 +99,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
+                    docker.withRegistry('https://${JFROG_CR_URL}', 'jfrog-cymbal-shops') {
                         docker.image("${JFROG_CR_IMAGE}").push()
                     }
                 }
