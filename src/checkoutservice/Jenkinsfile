@@ -5,11 +5,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = "checkoutservice"
-        DOCKER_IMAGE_TAG = "latest"
-        DOCKER_HUB_USERNAME = "obimadu"
-        DOCKER_HUB_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
         JFROG_CR_USERNAME = "cymbal-shops"
-        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}"
         SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
     }
 
@@ -37,10 +34,11 @@ pipeline {
             steps {
                 dir('src/checkoutservice') {
                     script {
-                        dockerImage = docker.build("${JFROG_CR_IMAGE}")
+                        // Built and Tag Image with Current Build No.
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}:${currentBuild.number}")
 
-                        // Tag for Docker Hub
-                        sh "docker tag ${JFROG_CR_IMAGE} ${DOCKER_HUB_IMAGE}"
+                        // Tag Image Latest
+                        sh 'docker tag ${JFROG_CR_IMAGE}:${currentBuild.number} ${JFROG_CR_IMAGE}:latest'
                     }
                 }
             }
@@ -53,7 +51,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}"
+                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:${currentBuild.number}"
                 }
             }
         }
@@ -62,17 +60,8 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
-                        docker.image("${JFROG_CR_IMAGE}").push()
-                    }
-                }
-            }
-        }
-
-        stage('Push Image to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cymbal-shops') {
-                        docker.image("${DOCKER_HUB_IMAGE}").push()
+                        docker.image("${JFROG_CR_IMAGE}:${currentBuild.number}").push()
+                        docker.image("${JFROG_CR_IMAGE}:latest").push()
                     }
                 }
             }
