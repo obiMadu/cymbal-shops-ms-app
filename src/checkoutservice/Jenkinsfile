@@ -11,6 +11,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+        
         stage('SonarQube Analysis') {
             steps {
                 dir('src/checkoutservice') {
@@ -24,7 +30,7 @@ pipeline {
             }
         }
 
-        stage("Code Quality gate") {
+        stage("Code Quality Gate") {
             steps {
                 waitForQualityGate abortPipeline: true
             }
