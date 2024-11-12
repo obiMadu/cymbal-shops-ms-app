@@ -24,8 +24,10 @@ pipeline {
         DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
         DOCKER_IMAGE_NAME = "checkoutservice"
         DOCKER_IMAGE_TAG = "latest"
+        JFROG_CR_USERNAME = "cymbal-shops"
         DOCKER_HUB_USERNAME = "obimadu"
-        DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        DOCKER_HUB_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
         SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
     }
 
@@ -64,14 +66,17 @@ pipeline {
             }
         }
 
-        stage('Build and Tag Docker Image') {
+        stage('Build and Tag Container Image') {
             when {
                 expression { isSubfolderChanged() }
             }
             steps {
                 dir('src/checkoutservice') {
                     script {
-                        dockerImage = docker.build("${DOCKER_IMAGE}")
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}")
+
+                        // Tag for Docker Hub
+                        dockerImage.tag("${DOCKER_HUB_IMAGE}")
                     }
                 }
             }
@@ -87,7 +92,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+                    sh "trivy image --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}"
                 }
             }
         }
@@ -99,7 +104,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://artifactory.obi.ninja', 'jfrog-cymbal-shops') {
-                        dockerImage.push()
+                        docker.image("${JFROG_CR_IMAGE}").push()
                     }
                 }
             }
@@ -111,8 +116,8 @@ pipeline {
             }
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
-                        dockerImage.push()
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cymbal-shops') {
+                        docker.image("${DOCKER_HUB_IMAGE}").push()
                     }
                 }
             }
