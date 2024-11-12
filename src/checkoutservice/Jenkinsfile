@@ -134,7 +134,7 @@ pipeline {
                             sh "git commit -m 'feat($SERVICE_NAME): Update image to v${currentBuild.number}'"
                             
                             // Push the new branch to the remote repository
-                            sh "git push https://${REPO_USERNAME}:${REPO_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
+                            sh "git push ${REPO_USERNAME}:${REPO_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
                             
                             // Create a pull request using the Gitea API
                             def apiUrl = "${MANIFESTS_REPO_URL}/api/v1/repos/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}/pulls"
