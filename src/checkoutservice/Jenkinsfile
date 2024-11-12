@@ -4,10 +4,16 @@ pipeline {
     }
 
     environment {
-        CONTAINER_IMAGE_NAME = "checkoutservice"
-        JFROG_CR_USERNAME = "cymbal-shops"
-        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${CONTAINER_IMAGE_NAME}"
-        SONARQUBE_PROJECT_ID = "cymbal-checkoutservice"
+        SERVICE_NAME = 'checkoutservice'
+        JFROG_CR_USERNAME = 'cymbal-shops'
+        JFROG_CR_IMAGE = '${JFROG_CR_USERNAME}/${SERVICE_NAME}'
+        SONARQUBE_PROJECT_ID = 'cymbal-checkoutservice'
+        MANIFESTS_GIT_SERVER = ''
+        MANIFESTS_REPO_URL = ''
+        MANIFESTS_REPO_BRANCH = '*/main'
+        MANIFESTS_REPO_USER_EMAIL = 'jenkins-ci@gitea.obi.ninja'
+        DEPLOYMENT_DIR = 'manifests/'
+        DEPLOYMENT_FILENAME = 'checkoutservice-deployment.yaml'
     }
 
     stages {
@@ -19,18 +25,20 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                dir('src/checkoutservice') {
-                    withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
-                        script {
-                            def scannerHome = tool 'SonarQubeScanner'
+                withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
+                    script {
+                        def directory = 'src/${SERVICE_NAME}'
+                        def scannerHome = tool 'SonarQubeScanner'
+
+                        dir(directory) {
                             sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
                         }
                     }
-                }
+                }   
             }
         }
 
-        stage("Code Quality Gate") {
+        stage('Code Quality Gate') {
             steps {
                 waitForQualityGate abortPipeline: true
             }
@@ -38,8 +46,9 @@ pipeline {
 
         stage('Build and Tag Image') {
             steps {
-                dir('src/checkoutservice') {
-                    script {
+                script {
+                    def directory = 'src/${SERVICE_NAME}'
+                    dir(directory) {
                         // Built and Tag Image with Current Build No.
                         dockerImage = docker.build("${JFROG_CR_IMAGE}:v${currentBuild.number}")
                     }
@@ -63,7 +72,7 @@ pipeline {
             }
         }
 
-        stage("Image Quality Gate") {
+        stage('Image Quality Gate') {
             steps {
                 script {
                     if (trivyOutput == 0) {
@@ -87,6 +96,64 @@ pipeline {
                 }
             }
         }
+
+        stage('Update Manifest and Create Pull Request') {
+            steps {
+                script {
+                    // Checkout the specified Git repository
+                    checkout([$class: 'GitSCM',
+                            branches: [[name: '${MANIFESTS_REPO_BRANCH}']],
+                            userRemoteConfigs: [[url: '${MANIFESTS_REPO_URL}']]])
+                    
+                    // Specify the directory, file, and new image name
+                    def directory = '${DEPLOYMENT_DIR}'
+                    def file = '${DEPLOYMENT_FILENAME}'
+                    def imageName = '${JFROG_CR_IMAGE}:v${currentBuild.number}'
+                    
+                    // Generate a unique branch name
+                    def branchName = "update-image-to-v${currentBuild.number}"
+                    
+                    // Use the dir step to change the current directory
+                    dir(directory) {
+                        // Create a new branch
+                        sh "git checkout -b ${branchName}"
+                        
+                        // Run the sed command to update the image name
+                        sh "sed -i 's/image: .*/image: ${imageName}/' ${file}"
+                        
+                        // Use the withCredentials step to provide the Git credentials
+                        withCredentials([usernamePassword(credentialsId: 'gitea-jenkinsci-creds', usernameVariable: 'GITEA_USERNAME', passwordVariable: 'GITEA_PASSWORD')]) {
+                            // Set the Git user email and name
+                            sh 'git config --global user.email "${MANIFESTS_REPO_USER_EMAIL}"'
+                            sh 'git config --global user.name "${GITEA_USERNAME}"'
+                            
+                            // Add the modified file to the Git staging area
+                            sh 'git add ${file}'
+                            
+                            // Commit the changes with a message
+                            sh 'git commit -m "feat($SERVICE_NAME): Update image to v${currentBuild.number}"'
+                            
+                            // Push the new branch to the remote repository
+                            sh "git push https://${GITEA_USERNAME}:${GITEA_PASSWORD}@${MANIFESTS_REPO_URL} ${branchName}"
+                            
+                            // Create a pull request using the Gitea API
+                            def apiUrl = "https://gitea.your-domain.com/api/v1/repos/your-username/your-repository/pulls"
+                            def requestBody = """
+                                {
+                                    "title": "Update image name",
+                                    "body": "Automatically updated the image name using Jenkins pipeline",
+                                    "head": "${branchName}",
+                                    "base": "main"
+                                }
+                            """
+                            sh "curl -X POST -H 'Content-Type: application/json' -d '${requestBody}' -u ${GITEA_USERNAME}:${GITEA_PASSWORD} ${apiUrl}"
+                        }
+                    }
+                }
+    }
+}
+
+
     }
 
     post {
