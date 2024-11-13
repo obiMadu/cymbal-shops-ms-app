@@ -77,7 +77,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: obimadu/adservice
+          image: https://artifactory.obi.ninja/cymbal-shops/adservice:v2
           name: adservice
           ports:
             - containerPort: 9555
