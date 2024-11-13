@@ -77,7 +77,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: obimadu/checkoutservice
+          image: https://artifactory.obi.ninja/cymbal-shops/checkoutservice:v41
           name: checkoutservice
           ports:
             - containerPort: 5050
