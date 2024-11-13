@@ -81,7 +81,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: obimadu/currencyservice
+          image: https://artifactory.obi.ninja/cymbal-shops/currencyservice:v8
           name: currencyservice
           ports:
             - containerPort: 7000
