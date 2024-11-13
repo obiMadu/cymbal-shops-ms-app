@@ -21,7 +21,7 @@ spec:
         io.kompose.service: emailservice
     spec:
       containers:
-        - image: obimadu/emailservice
+        - image: https://artifactory.obi.ninja/cymbal-shops/emailservice:v6
           name: emailservice
           ports:
             - containerPort: 8080
