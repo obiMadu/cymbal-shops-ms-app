@@ -1,68 +1,164 @@
 pipeline {
     agent {
-        label "ubuntu"
-      }
+        label 'ubuntu'
+    }
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('cymbal-shops-docker-hub-credentials')
-        DOCKER_IMAGE_NAME = "frontend"
-        DOCKER_IMAGE_TAG = "latest"
-        DOCKER_HUB_USERNAME = "obimadu"
-        DOCKER_IMAGE = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
-        SONARQUBE_PROJECT_ID = "cymbal-frontend"
+        SERVICE_NAME = 'frontend'
+        JFROG_CR_URL = 'https://artifactory.obi.ninja'
+        JFROG_CR_USERNAME = 'cymbal-shops'
+        JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${SERVICE_NAME}"
+        SONARQUBE_PROJECT_ID = 'cymbal-frontend'
+        MANIFESTS_REPO_URL = 'gitea.obi.ninja'
+        MANIFESTS_REPO_NAME = 'cymbal-shops-ms-app'
+        MANIFESTS_REPO_BRANCH = '*/main'
+        MANIFESTS_REPO_USER_EMAIL = 'jenkins-ci@gitea.obi.ninja'
+        DEPLOYMENT_DIR = 'manifests/'
+        DEPLOYMENT_FILENAME = 'frontend-deployment.yaml'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
                 checkout scm
             }
         }
-
+        
         stage('SonarQube Analysis') {
             steps {
-                dir('src/frontend') {
-                    withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
-                        script {
-                          def scannerHome = tool 'SonarQubeScanner';
-                          sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
+                withSonarQubeEnv(installationName: 'SonarQube', credentialsId: 'sonarqube-token-90') {
+                    script {
+                        def scannerHome = tool 'SonarQubeScanner'
+                        dir("src/${SERVICE_NAME}") {
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONARQUBE_PROJECT_ID}"
                         }
                     }
-                }
+                }   
             }
         }
 
-        stage('Build and Tag Docker Image') {
+        stage('Code Quality Gate') {
             steps {
-                dir('src/frontend') {
-                    script {
-                        dockerImage = docker.build("${DOCKER_IMAGE}")
+                waitForQualityGate abortPipeline: true
+            }
+        }
+
+        stage('Build and Tag Image') {
+            steps {
+                script {
+                    dir("src/${SERVICE_NAME}") {
+                        // Built and Tag Image with Current Build No.
+                        dockerImage = docker.build("${JFROG_CR_IMAGE}:v${currentBuild.number}")
                     }
                 }
             }
         }
 
         stage('Scan with Trivy') {
-            environment{
+            environment {
                 TRIVY_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-db"
                 TRIVY_JAVA_DB_REPOSITORY = "public.ecr.aws/aquasecurity/trivy-java-db"
             }
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
+                    // Run Trivy scan on the Docker image
+                    trivyOutput = sh(
+                        script: "trivy image --exit-code 1 --severity HIGH,CRITICAL ${JFROG_CR_IMAGE}:v${currentBuild.number}",
+                        returnStatus: true
+                    )
                 }
             }
         }
 
-        stage('Push Image to Docker Hub') {
+        stage('Image Quality Gate') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'cymbal-shops-docker-hub-credentials') {
-                        dockerImage.push()
+                    if (trivyOutput == 0) {
+                        echo "Trivy scan passed. No HIGH or CRITICAL vulnerabilities found."
+                    } else {
+                        echo "Trivy scan failed. HIGH or CRITICAL vulnerabilities found."
+                        echo "Gate Skipped. Be sure to Enforce in a real Project."
+                        // currentBuild.result = 'UNSTABLE'
+                    }
+                }  
+            }
+        }
+
+        stage('Push Image to Jfrog CR') {
+            steps {
+                script {
+                    docker.withRegistry("${JFROG_CR_URL}", 'jfrog-cymbal-shops') {
+                        docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push()
+                        docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push("latest")
                     }
                 }
             }
         }
+
+        stage('Update Manifest and Create Pull Request') {
+            steps {
+                script {
+                    // Use the withCredentials step to provide the Git credentials
+                    withCredentials([usernamePassword(credentialsId: 'gitea-jenkinsci-creds', usernameVariable: 'REPO_USERNAME', passwordVariable: 'REPO_PASSWORD')]) {
+
+                        // Checkout the specified Git repository
+                        checkout([$class: 'GitSCM',
+                                branches: [[name: "${MANIFESTS_REPO_BRANCH}"]],
+                                userRemoteConfigs: [[url: "https://${MANIFESTS_REPO_URL}/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}"]]])
+                        
+                        // Specify the directory, file, and new image name
+                        def directory = "${DEPLOYMENT_DIR}"
+                        def file = "${DEPLOYMENT_FILENAME}"
+                        def imageName = "${JFROG_CR_URL}/${JFROG_CR_IMAGE}:v${currentBuild.number}"
+                        
+                        // Generate a unique branch name
+                        def branchName = "update-image-to-v${currentBuild.number}"
+                        
+                        // Use the dir step to change the current directory
+                        dir(directory) {
+                            // Create a new branch
+                            sh "git checkout -b ${branchName}"
+                            
+                            // Run the sed command to update the image name
+                            sh "sed -i 's|image: .*|image: ${imageName}|' ${file}"
+                            
+                            
+                            // Set the Git user email and name
+                            sh 'git config --global user.email "${MANIFESTS_REPO_USER_EMAIL}"'
+                            sh 'git config --global user.name "${REPO_USERNAME}"'
+                            
+                            // Add the modified file to the Git staging area
+                            sh "git add ${file}"
+                            
+                            // Commit the changes with a message
+                            sh "git commit -m 'feat($SERVICE_NAME): Update image to v${currentBuild.number}'"
+                            
+                            // Push the new branch to the remote repository
+                            sh "git push https://${REPO_USERNAME}:${REPO_PASSWORD}@${MANIFESTS_REPO_URL}/${REPO_USERNAME}/${MANIFESTS_REPO_NAME} ${branchName}"
+                            
+                            // Create a pull request using the Gitea API
+                            def apiUrl = "https://${MANIFESTS_REPO_URL}/api/v1/repos/${REPO_USERNAME}/${MANIFESTS_REPO_NAME}/pulls"
+                            def requestBody = """
+                                {
+                                    "title": "Update ${SERVICE_NAME} image to v${currentBuild.number}",
+                                    "body": "Automatically updated the image name using Jenkins pipeline",
+                                    "head": "${branchName}",
+                                    "base": "main"
+                                }
+                            """
+                            sh "curl -X POST -H 'Content-Type: application/json' -d '${requestBody}' -u ${REPO_USERNAME}:${REPO_PASSWORD} ${apiUrl}"
+                        }
+                }
+            }
+        }
+    }
+
+    }
+
+    post {
+        always {
+            // Clean up the workspace after the build
+            cleanWs()
+        }
     }
 }
-
