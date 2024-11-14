@@ -77,7 +77,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: obimadu/productcatalogservice
+          image: artifactory.obi.ninja/cymbal-shops/productcatalogservice:v7
           name: productcatalogservice
           ports:
             - containerPort: 3550
