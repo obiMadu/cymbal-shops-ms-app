@@ -5,7 +5,7 @@ pipeline {
 
     environment {
         SERVICE_NAME = 'cartservice'
-        JFROG_CR_URL = 'https://artifactory.obi.ninja'
+        JFROG_CR_URL = 'artifactory.obi.ninja'
         JFROG_CR_USERNAME = 'cymbal-shops'
         JFROG_CR_IMAGE = "${JFROG_CR_USERNAME}/${SERVICE_NAME}"
         SONARQUBE_PROJECT_ID = 'cymbal-cartservice'
@@ -87,7 +87,7 @@ pipeline {
         stage('Push Image to Jfrog CR') {
             steps {
                 script {
-                    docker.withRegistry("${JFROG_CR_URL}", 'jfrog-cymbal-shops') {
+                    docker.withRegistry("https://${JFROG_CR_URL}", 'jfrog-cymbal-shops') {
                         docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push()
                         docker.image("${JFROG_CR_IMAGE}:v${currentBuild.number}").push("latest")
                     }
