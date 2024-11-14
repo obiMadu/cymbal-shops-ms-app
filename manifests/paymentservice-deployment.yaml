@@ -81,7 +81,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: obimadu/paymentservice
+          image: artifactory.obi.ninja/cymbal-shops/paymentservice:v7
           name: paymentservice
           ports:
             - containerPort: 50051
