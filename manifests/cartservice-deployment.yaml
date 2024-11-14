@@ -77,7 +77,7 @@ spec:
                 configMapKeyRef:
                   key: SHOPPING_ASSISTANT_SERVICE_ADDR
                   name: svc-addresses-env
-          image: https://artifactory.obi.ninja/cymbal-shops/cartservice:v9
+          image: artifactory.obi.ninja/cymbal-shops/cartservice:v16
           name: cartservice
           ports:
             - containerPort: 7070
