@@ -114,7 +114,7 @@ pipeline {
                         def imageName = "${JFROG_CR_URL}/${JFROG_CR_IMAGE}:v${currentBuild.number}"
                         
                         // Generate a unique branch name
-                        def branchName = "update-image-to-v${currentBuild.number}"
+                        def branchName = "update-${SERVICE_NAME}-image-to-v${currentBuild.number}"
                         
                         // Use the dir step to change the current directory
                         dir(directory) {
